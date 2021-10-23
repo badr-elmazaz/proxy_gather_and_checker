@@ -1,0 +1,50 @@
+{
+  "basic_auth": {
+    "badr": "ultime3CifreDiPiGreco"
+  },
+  "web_application": {
+    "Flask": {
+      "host": "127.0.0.1",
+      "port": 5001
+    }
+  },
+  "proxy_gather": {
+    "generic_regex": "((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*?(?=port).*?([1-5][0-9]{4}|[0-9]{1,4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])",
+    "web_sites": [
+      {
+        "id": "freeProxy_cz",
+        "url": "http://free-proxy.cz/en/",
+        "regex": "((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*?(?=port).*?([1-5][0-9]{4}|[0-9]{1,4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])",
+        "config": {
+          "element1": "frmsearchFilter-protocol-1",
+          "element2": "frmsearchFilter-send",
+          "element3": "clickexport",
+          "element4": "zkzk",
+          "element5": "g-recaptcha",
+          "element6": "recaptcha-checkbox-checkmark",
+          "element7": "input",
+          "element8": "h1"
+        }
+      },
+      {
+        "id": "spys_one",
+        "url": "https://spys.one/en/http-proxy-list/",
+        "regex": "((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*?:.*?>([1-5][0-9]{4}|[0-9]{1,4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])<",
+        "config": {
+          "element1": "xpp",
+          "element2": "500",
+          "element3": "spy14"
+        }
+      }
+    ],
+    "web_driver": {
+      "headless": true
+    }
+  },
+
+  "google_search": {
+    "query": "free proxy list",
+    "num_results": 20
+  }
+}
+
