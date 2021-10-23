@@ -1,26 +1,29 @@
 import random
 import re
-import traceback
+from itertools import cycle
 from time import sleep
-import memory_profiler
+
 import psutil
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
+
 from google_advanced_search.search.google_search import *
 from proxy_checker.checkProxy import check_proxies
-import os.path as op
-from app import config
-from itertools import cycle
 
 __version__ = "0.0.1"
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+config_path = op.join(THIS_FOLDER, "..", "static", "config.json")
+with open(config_path) as config_file:
+    config = json.load(config_file)
+
 CONFIG_PATH = config["proxy_gather"]
 CONFIG_PATH_FREE_PROXY_CZ = config["proxy_gather"]["web_sites"][0]
 CONFIG_PATH_SPYS_ONE = config["proxy_gather"]["web_sites"][1]
-proxy_pool=None
+proxy_pool = None
+
 
 def resourcesUsage():
     cpu = psutil.cpu_percent(interval=1)
@@ -97,77 +100,6 @@ def get_http_proxy_spys_one():
     return proxies_found
 
 
-@memory_profiler.profile
-def get_http_free_proxy_cz():
-    # filter by http button
-    driver = get_new_chrome_session()
-    try:
-        driver.get(free_proxy_cz_url)
-    except:
-        print("Connection Error, check your internet access")
-        sys.exit()
-    try:
-        driver.find_element_by_id(CONFIG_PATH_FREE_PROXY_CZ["elements"]["element1"]).click()
-        driver.find_element_by_id(CONFIG_PATH_FREE_PROXY_CZ["elements"]["element2"]).click()
-        sleep(1)
-    except:
-        print("I can't find http button")
-    # try to find the last element number
-    index = 1
-    proxyList = []
-    while True:
-        print(f"index={index}")
-        try:
-            # todo export litterals in config file
-            driver.find_element_by_id(CONFIG_PATH_FREE_PROXY_CZ["elements"]["element3"]).click()
-            temp_proxy = driver.find_element_by_id(CONFIG_PATH_FREE_PROXY_CZ["elements"]["element4"]).text.split("\n")
-            # monitoring performance cpu and ram
-            processResourcesUsage()
-            for p in temp_proxy:
-                proxyList.append(p)
-            sleep(random.randint(0, 5))
-            index += 1
-            driver.get(free_proxy_cz_url + f"/proxylist/main/{index}")
-        except:
-            try:
-                driver.find_element_by_class_name(CONFIG_PATH_FREE_PROXY_CZ["elements"]["element5"])
-                print("Google captcha")
-                print("Trying to solve Google captcha")
-                sleep(3)
-                try:
-                    driver.find_element_by_class_name(CONFIG_PATH_FREE_PROXY_CZ["elements"]["element6"]).click()
-                    sleep(1)
-                    driver.find_element_by_tag_name(CONFIG_PATH_FREE_PROXY_CZ["elements"]["element7"]).click()
-                except:
-                    print("Error here")
-                    traceback.print_exc()
-                    return proxyList
-                driver.quit()
-                sleep(random.randint(0, 5))
-                driver = get_new_chrome_session()
-                driver.get(free_proxy_cz_url)
-                sleep(2)
-                driver.get(free_proxy_cz_url + f"/proxylist/country/all/http/ping/all/{index}")
-                index += 1
-            except:
-                try:
-                    if driver.find_element_by_tag_name(
-                            CONFIG_PATH_FREE_PROXY_CZ["elements"]["element8"]).text == "404 not found":
-                        print("Page not found 404 - the proxies are terminated")
-                        break
-                    else:
-                        print("Generic Error")
-                    driver.quit()
-                except:
-                    pass
-                    driver.quit()
-
-    return proxyList
-
-
-
-
-
 def google_it():
     query_type = QueryType.ALL_THESE_WORDS_PARAMETER
     num_results = config["google_search"]["num_results"]
@@ -178,9 +110,6 @@ def google_it():
 
     for result in results:
         yield getattr(result, "url")
-
-
-
 
 
 def use_generic_regex(url: str):
@@ -201,8 +130,6 @@ def use_generic_regex(url: str):
     return proxies_found
 
 
-
-
 def get_proxy_pool():
     path_good_proxies = op.join(THIS_FOLDER, "..", "proxy resources", "good_proxy.txt")
     # todo check if it is empty
@@ -211,37 +138,36 @@ def get_proxy_pool():
         print(f"Proxies Pool:\n{proxies}")
     return cycle(proxies)
 
+
 def routine():
     global proxy_pool
     path_save_proxies_after_checking = op.join(THIS_FOLDER, "..", "proxy resources", "good_proxy.txt")
     http_proxies1 = set()
     # http_proxies1 = get_http_proxy_free_proxy_cz()
     http_proxies2 = get_http_proxy_spys_one()
-    http_proxies=set.union(http_proxies1, http_proxies2)
+    http_proxies = set.union(http_proxies1, http_proxies2)
     print(f"I found {len(http_proxies)} proxies: {http_proxies}")
     print("I'm checking them")
-    if len(check_proxies(http_proxies))==0:
+    if len(check_proxies(http_proxies)) == 0:
         raise Exception("There are not good proxies")
-    proxy_pool=get_proxy_pool()
-
+    proxy_pool = get_proxy_pool()
 
 
 def on_startup():
     global proxy_pool
     path_good_proxies = op.join(THIS_FOLDER, "..", "proxy resources", "good_proxy.txt")
     with open(path_good_proxies, "r") as f:
-        proxies=f.read().splitlines()
-    if len(proxies)==0:
+        proxies = f.read().splitlines()
+    if len(proxies) == 0:
         routine()
     else:
-        good_proxies=check_proxies(proxies)
-        if len(good_proxies)==0:
+        good_proxies = check_proxies(proxies)
+        if len(good_proxies) == 0:
             routine()
         else:
             with open(path_good_proxies, "w") as f:
                 f.writelines(good_proxies)
-            proxy_pool=get_proxy_pool()
-
+            proxy_pool = get_proxy_pool()
 
 
 def get_a_good_http_proxy():
@@ -255,10 +181,76 @@ def get_a_good_http_proxy():
         return get_a_good_http_proxy()
     return random.choice(proxy)
 
+
+ports_most_used = [81, 82, 83, 84, 85, 86, 88, 1337, 3124, 3127, 3129, 6515, 6588, 6666, 6675, 8000, 8001, 8008, 8081,
+                   8082, 8085, 8088, 8090, 8123, 8800, 8888, 8909, 9000, 9415, 36081, 54321, 60099]
+ports_most_used = set(ports_most_used)
+
+
+def get_all_proxies_ip(source_page: str):
+    pass
+
+
+def get_all_proxies_port(source_page: str):
+    pass
+
+
+def get_all_proxies_by_ips_and_ports(proxy: str, ports: set) -> str:
+    for port in ports:
+        try_proxy = proxy + ":" + str(port)
+        print(f"I'm try this combination {try_proxy}")
+        tmp_list = []
+        tmp_list.append(try_proxy)
+        tmp = check_proxies(tmp_list)
+        if tmp:
+            return tmp[0]
+            print("Good")
+        else:
+            print("BAD")
+    return None
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def get_proxies_new_method():
+    ip_regex = config["proxy_gather"]["ip_regex"]
+    urls = list(google_it())
+    print(urls)
+    good_combinations = set()
+    global ports_most_used
+    for url in urls:
+        driver = get_new_chrome_session()
+        try:
+            driver.get(url)
+        except:
+            print("Connection Error, check your internet access")
+            sys.exit()
+        sleep(2)
+        page_source = driver.page_source
+        driver.quit()
+        ips_found = re.findall(ip_regex, page_source)
+        print("found:", ips_found)
+
+        processes = []
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            for ip_found in ips_found:
+                processes.append(executor.submit(get_all_proxies_by_ips_and_ports, ip_found, ports_most_used))
+        for task in as_completed(processes):
+            if task.result() != None:
+                good_combinations.add(task.result())
+
+
+
+
+
+    print(f"All good proxies:\n{good_combinations}")
+    return good_combinations
+
+
 if __name__ == '__main__':
+    get_proxies_new_method()
+
+    # on_startup()
 
     # routine()
-    on_startup()
 
     # urls = list(google_it())
     # print(urls)
@@ -266,9 +258,6 @@ if __name__ == '__main__':
     # for url in urls:
     #     proxies = set.union(use_generic_regex(url), proxies)
     # print(proxies)
-
-
-
 
     # proxies=set()
     # p1 = get_http_proxy_spys_one()

@@ -1,14 +1,12 @@
 # from meinheld import server
-from flask import Flask, request, jsonify
-from flask_restful import Api, Resource
-from flask_httpauth import HTTPBasicAuth
-import json
-import sched, time
+import sched
+import time
 from os import path as op
-import os
 
-
-
+from flask import Flask, request, jsonify
+from flask_httpauth import HTTPBasicAuth
+from flask_restful import Api, Resource
+from __init__ import *
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -17,9 +15,7 @@ api = Api(app, prefix="/api/v1")
 
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 
-config_path=op.join(THIS_FOLDER, "static", "config.json")
-with open(config_path) as config_file:
-        config=json.load(config_file)
+
 
 
 USERS_ALLOWED = config["basic_auth"]
